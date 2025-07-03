@@ -1,51 +1,46 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
-import { db, Task } from "./db";
+import { db, initDB } from "./database";
 
 dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (_req, res) => {
-  res.send("Servidor da Jetsales API está no ar 🚀");
+// Rota para listar tarefas
+app.get("/tasks", async (req: Request, res: Response) => {
+  await db.read();
+  res.json(db.data?.tasks || []);
 });
 
-app.post("/tasks", (req, res) => {
-  const { title, description, executeAt } = req.body;
+// Rota para criar nova tarefa
+app.post("/tasks", async (req: Request, res: Response) => {
+  const { title, description } = req.body;
 
-  if (!title || !description || !executeAt) {
-    return res
-      .status(400)
-      .json({ error: "Título, descrição e horário são obrigatórios" });
-  }
-
-  const executeAtDate = new Date(executeAt);
-  if (isNaN(executeAtDate.getTime()) || executeAtDate <= new Date()) {
-    return res.status(400).json({ error: "Horário inválido ou no passado" });
-  }
-
-  const newTask: Task = {
+  const newTask = {
     id: uuidv4(),
     title,
     description,
-    executeAt: executeAtDate.toISOString(),
+    createdAt: new Date().toISOString(),
   };
 
-  db.read();
-  db.data!.tasks.push(newTask);
-  db.write();
+  await db.read();
+  db.data?.tasks.push(newTask);
+  await db.write();
 
-  return res.status(201).json(newTask);
-}); // <- aqui fecha a rota corretamente
+  res.status(201).json(newTask);
+});
 
-const start = () => {
+// Inicializa o banco e servidor
+const start = async () => {
+  await initDB();
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+    console.log(`Servidor rodando na porta ${PORT}`);
   });
 };
 
