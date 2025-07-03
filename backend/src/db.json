@@ -1,3 +1,16 @@
 {
-  "tasks": []
+  "tasks": [
+    {
+      "id": "bde274ef-2323-474f-8db3-aeadb43bddbc",
+      "title": "Testar API",
+      "description": "Primeira tarefa via Postman",
+      "createdAt": "2025-07-03T17:10:59.170Z"
+    },
+    {
+      "id": "4b61e41d-02d0-45b2-82fb-de7470ebb6c0",
+      "title": "Tarefa Auth",
+      "description": "Criada com token JWT",
+      "createdAt": "2025-07-03T20:04:57.864Z"
+    }
+  ]
 }
