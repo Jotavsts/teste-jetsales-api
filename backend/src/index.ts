@@ -1,9 +1,14 @@
-import express, { Request, Response } from "express";
+// src/index.ts
+import express from "express";
+import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
-import { db, initDB } from "./database";
-import { generateToken, authMiddleware } from "./auth"; // ← import do auth
+import dayjs from "dayjs";
+import { JobsOptions } from "bullmq";
+import { db, initDB } from "./database.js";
+import { generateToken, authMiddleware } from "./auth.js";
+import { notifyQueue } from "./queue.js";
 
 dotenv.config();
 
@@ -13,10 +18,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Rota de login (geração de JWT)
-app.post("/login", (req: Request, res: Response) => {
+// --- Rota de login (geração de JWT) ---
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
-  // Usuário fixo apenas como exemplo
   if (username === "admin" && password === "password") {
     const token = generateToken({ username });
     return res.json({ token });
@@ -24,14 +28,14 @@ app.post("/login", (req: Request, res: Response) => {
   return res.status(401).json({ error: "Credenciais inválidas" });
 });
 
-// Rota para listar tarefas (pública)
-app.get("/tasks", async (req: Request, res: Response) => {
+// --- Rota pública: listar tarefas ---
+app.get("/tasks", async (_req, res) => {
   await db.read();
   res.json(db.data?.tasks || []);
 });
 
-// Rota para criar nova tarefa (protegida)
-app.post("/tasks", authMiddleware, async (req: Request, res: Response) => {
+// --- Rota protegida: criar tarefa com agendamento ---
+app.post("/tasks", authMiddleware, async (req, res) => {
   const { title, description } = req.body;
 
   const newTask = {
@@ -42,23 +46,30 @@ app.post("/tasks", authMiddleware, async (req: Request, res: Response) => {
   };
 
   await db.read();
-  db.data?.tasks.push(newTask);
+  db.data!.tasks.push(newTask);
   await db.write();
+
+  // Agendamento da notificação
+  const offset = parseInt(process.env.NOTIFY_OFFSET_MINUTES || "5", 10);
+  const notifyTime = dayjs(newTask.createdAt).add(-offset, "minute").toDate();
+
+  // 🔔 Delay fixo de 5 segundos
+  const delay = 5000;
+  const opts: JobsOptions = { delay };
+
+  await notifyQueue.add("notify-task", newTask, opts);
 
   res.status(201).json(newTask);
 });
 
-// Rota para editar uma tarefa existente (protegida)
-app.put("/tasks/:id", authMiddleware, async (req: Request, res: Response) => {
+// --- Rota protegida: editar tarefa ---
+app.put("/tasks/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
   const { title, description } = req.body;
 
   await db.read();
-  const task = db.data?.tasks.find((task) => task.id === id);
-
-  if (!task) {
-    return res.status(404).json({ message: "Tarefa não encontrada" });
-  }
+  const task = db.data?.tasks.find((t) => t.id === id);
+  if (!task) return res.status(404).json({ error: "Tarefa não encontrada" });
 
   if (title) task.title = title;
   if (description) task.description = description;
@@ -67,31 +78,27 @@ app.put("/tasks/:id", authMiddleware, async (req: Request, res: Response) => {
   res.json(task);
 });
 
-// Rota para excluir uma tarefa pelo ID (protegida)
-app.delete(
-  "/tasks/:id",
-  authMiddleware,
-  async (req: Request, res: Response) => {
-    const { id } = req.params;
+// --- Rota protegida: excluir tarefa ---
+app.delete("/tasks/:id", authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  await db.read();
 
-    await db.read();
-    const before = db.data?.tasks.length || 0;
-    db.data!.tasks = db.data!.tasks.filter((task) => task.id !== id);
+  const originalCount = db.data?.tasks.length || 0;
+  db.data!.tasks = db.data!.tasks.filter((t) => t.id !== id);
 
-    if (db.data!.tasks.length === before) {
-      return res.status(404).json({ error: "Tarefa não encontrada." });
-    }
-
-    await db.write();
-    res.status(200).json({ message: "Tarefa excluída com sucesso." });
+  if (db.data!.tasks.length === originalCount) {
+    return res.status(404).json({ error: "Tarefa não encontrada" });
   }
-);
 
-// Inicializa o banco e servidor
+  await db.write();
+  res.json({ message: "Tarefa excluída com sucesso." });
+});
+
+// --- Inicializa o banco e sobe o servidor ---
 const start = async () => {
   await initDB();
   app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
   });
 };
 

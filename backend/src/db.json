@@ -11,6 +11,48 @@
       "title": "Tarefa Auth",
       "description": "Criada com token JWT",
       "createdAt": "2025-07-03T20:04:57.864Z"
+    },
+    {
+      "id": "6ce1cdb0-87ce-4798-b387-8690d3dce777",
+      "title": "Teste de notificação",
+      "description": "Testando se o worker está funcionando corretamente",
+      "createdAt": "2025-07-04T13:25:29.429Z"
+    },
+    {
+      "id": "53046bd1-f378-4d2b-9d2f-65888898a2ea",
+      "title": "Teste de notificação",
+      "description": "Testando se o worker está funcionando corretamente",
+      "createdAt": "2025-07-04T13:45:32.369Z"
+    },
+    {
+      "id": "efd1be4c-d025-4725-8e24-d42dc9cdd98a",
+      "title": "Teste de notificação",
+      "description": "Testando se o worker está funcionando corretamente",
+      "createdAt": "2025-07-04T13:45:46.543Z"
+    },
+    {
+      "id": "342c0215-5d55-48b3-a8bb-b962b339e1a1",
+      "title": "Teste de notificação",
+      "description": "Testando se o worker está funcionando corretamente",
+      "createdAt": "2025-07-04T14:09:18.632Z"
+    },
+    {
+      "id": "4e560ea0-deaf-43af-a565-b4df6310291a",
+      "title": "Tarefa de Teste",
+      "description": "Essa tarefa serve para testar a notificação após 5 segundos.",
+      "createdAt": "2025-07-04T14:18:06.853Z"
+    },
+    {
+      "id": "76f570f4-7aa1-41c1-bdfe-706b7f518c3f",
+      "title": "Tarefa de Teste",
+      "description": "Essa tarefa serve para testar a notificação após 5 segundos.",
+      "createdAt": "2025-07-04T14:33:50.604Z"
+    },
+    {
+      "id": "d56fd2b8-7c2c-46b3-b594-2c7805fb42c7",
+      "title": "Tarefa de Teste",
+      "description": "Essa tarefa serve para testar a notificação após 5 segundos.",
+      "createdAt": "2025-07-04T14:47:10.883Z"
     }
   ]
 }
