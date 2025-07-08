@@ -15,7 +15,15 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// ✅ CORS com suporte a Authorization
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(express.json());
 
 // --- Rota de login (geração de JWT) ---
@@ -49,11 +57,9 @@ app.post("/tasks", authMiddleware, async (req, res) => {
   db.data!.tasks.push(newTask);
   await db.write();
 
-  // Agendamento da notificação
   const offset = parseInt(process.env.NOTIFY_OFFSET_MINUTES || "5", 10);
   const notifyTime = dayjs(newTask.createdAt).add(-offset, "minute").toDate();
 
-  // 🔔 Delay fixo de 5 segundos
   const delay = 5000;
   const opts: JobsOptions = { delay };
 
